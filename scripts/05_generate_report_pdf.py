@@ -39,6 +39,10 @@ reg_tbl     = pd.read_csv(os.path.join(TBL_DIR, "table6_regression_results.csv")
 hausman_tbl = pd.read_csv(os.path.join(TBL_DIR, "table7_hausman_test.csv"))
 diag_tbl    = pd.read_csv(os.path.join(TBL_DIR, "table8_diagnostics.csv"))
 vif_tbl     = pd.read_csv(os.path.join(TBL_DIR, "diag_vif.csv"))
+conc_tbl    = pd.read_csv(os.path.join(TBL_DIR, "table_market_concentration.csv"))
+
+# Market share per firm per year
+df['market_share'] = df.groupby('year')['Output'].transform(lambda x: x / x.sum())
 
 print("Du lieu va bang ket qua da load xong.")
 
@@ -294,15 +298,16 @@ pdf.set_text_color(0, 0, 0)
 pdf.add_page()
 pdf.h1("MỤC LỤC")
 toc = [
-    ("I.",    "Giới thiệu và mô hình nghiên cứu"),
-    ("II.",   "Mô tả dữ liệu"),
-    ("III.",  "Phân tích khám phá (EDA)"),
-    ("IV.",   "Kết quả hồi quy"),
-    ("V.",    "Lựa chọn mô hình — Kiểm định Hausman"),
-    ("VI.",   "Kiểm định chẩn đoán"),
-    ("VII.",  "Kiểm tra tính bền vững (Robustness Check)"),
-    ("VIII.", "Thảo luận kết quả"),
-    ("IX.",   "Kết luận và hàm ý chính sách"),
+    ("I.",     "Gioi thieu va mo hinh nghien cuu"),
+    ("II.",    "Mo ta du lieu"),
+    ("III.",   "Phan tich kham pha (EDA)"),
+    ("III.5.", "Thi phan, CR4 va HHI — Cau truc thi truong"),
+    ("IV.",    "Ket qua uoc luong mo hinh (OLS / FE / RE)"),
+    ("V.",     "Lua chon mo hinh — Kiem dinh Hausman"),
+    ("VI.",    "Kiem dinh chan doan (VIF, BP, DW)"),
+    ("VII.",   "Kiem tra tinh ben vung (Robustness Check)"),
+    ("VIII.",  "Thao luan ket qua"),
+    ("IX.",    "Ket luan va ham y chinh sach"),
 ]
 pdf.ln(3)
 for num, title in toc:
@@ -537,6 +542,80 @@ pdf.body(
     "Quan hệ tuyến tính dương rõ ràng giữa ln(Sản lượng) và ln(Lao động), "
     "ln(Quy mô), ln(Vốn), ln(Lương). Đòn bẩy có tương quan dương yếu. "
     "Các đường xu hướng đều có độ dốc dương, xác nhận hướng tác động kỳ vọng."
+)
+
+# ════════════════════════════════════════════════════════════════════════════
+# III.5  THI PHAN, CR4, HHI
+# ════════════════════════════════════════════════════════════════════════════
+pdf.add_page()
+pdf.h1("III.5. THI PHAN, CR4 VA HHI — CAU TRUC THI TRUONG")
+
+pdf.h2("3.5.1. Giai thich chi so")
+pdf.body(
+    "Truoc khi uoc luong mo hinh, can phan tich cau truc thi truong cua nganh go "
+    "noi that de hieu boi canh canh tranh. Ba chi so duoc su dung:\n\n"
+    "  - THI PHAN (Market Share): Doanh thu DN / Tong doanh thu nganh trong nam.\n"
+    "    Phan anh vi the canh tranh cua tung doanh nghiep.\n\n"
+    "  - CR4 (Concentration Ratio 4): Tong thi phan cua 4 DN lon nhat trong nam.\n"
+    "    CR4 < 40% = thi truong canh tranh;  40-60% = oligopoly;  >60% = doc quyen nhom.\n\n"
+    "  - HHI (Herfindahl-Hirschman Index): Tong binh phuong thi phan x 10.000.\n"
+    "    HHI < 1.500 = thi truong canh tranh;  1.500-2.500 = tap trung vua;\n"
+    "    HHI > 2.500 = tap trung cao (theo chuan Hoa Ky / EU)."
+)
+
+pdf.h2("3.5.2. Ket qua tinh toan CR4 va HHI (2012-2018)")
+
+conc_headers = ["Nam", "So DN", "CR4 (%)", "HHI", "Danh gia CR4", "Danh gia HHI"]
+conc_rows_tbl = []
+for _, r in conc_tbl.iterrows():
+    cr4_pct = r['CR4']
+    hhi_val = r['HHI']
+    cr4_label = "Canh tranh" if cr4_pct < 40 else ("Oligopoly" if cr4_pct < 60 else "Doc quyen nhom")
+    hhi_label  = "Canh tranh" if hhi_val < 1500 else ("Tap trung vua" if hhi_val < 2500 else "Tap trung cao")
+    conc_rows_tbl.append([
+        str(int(r['year'])),
+        str(int(r['N_firms'])),
+        f"{cr4_pct:.2f}%",
+        f"{hhi_val:.1f}",
+        cr4_label,
+        hhi_label,
+    ])
+pdf.table(conc_headers, conc_rows_tbl, col_widths=[14, 18, 22, 22, 37, 37])
+
+pdf.highlight_box(
+    "Ket luan cau truc thi truong: CR4 dao dong 14,6% - 22,0% va HHI tu 123 - 208,\n"
+    "deu rat thap so voi nguong canh tranh. Nganh go noi that VSIC 31 co cau truc\n"
+    "THI TRUONG CANH TRANH CAO — khong co DN nao co vi the doc quyen.\n"
+    "Tuy nhien, xu huong tap trung tang nhe tu 2012 den 2018 (CR4 tang 6,1 diem %,\n"
+    "HHI tang 74 diem), cho thay qua trinh tich tu san xuat dang dien ra.",
+    bg=(232, 240, 254), border=(13, 71, 161)
+)
+
+pdf.h2("3.5.3. Bieu do cau truc thi truong")
+pdf.insert_figure(
+    os.path.join(FIG_DIR, "fig_market_concentration.png"),
+    "Hinh: CR4, HHI va so DN nganh go noi that Viet Nam 2012-2018",
+    w=168
+)
+pdf.body(
+    "Nhan xet tu bieu do:\n"
+    "  - CR4 tang lien tuc tu 15,9% (2012) len 22,0% (2018), du van o muc canh tranh.\n"
+    "  - HHI tang tu 134 (2012) len 208 (2018), phan anh xu huong tap trung nhe.\n"
+    "  - So DN trong mau giam tu 523 (2012) xuong 230 (2018), co the phan anh\n"
+    "    qua trinh rut lui cua DN nho va gia nhap cua DN lon hon."
+)
+
+pdf.h2("3.5.4. Thi phan top 10 doanh nghiep lon nhat")
+pdf.insert_figure(
+    os.path.join(FIG_DIR, "fig_top10_market_share.png"),
+    "Hinh: Phan phoi thi phan Top 10 DN lon nhat moi nam (2012-2018)",
+    w=155
+)
+pdf.body(
+    "Thi phan cua DN hang dau dao dong 3-6%, cho thay khong co DN nao chiem vi tri\n"
+    "ap dao. Duong cong thi phan co do doc kha thoai — phu hop voi thi truong\n"
+    "co nhieu DN nho va vua canh tranh. Den 2018, DN lon nhat chiem 6,2% thi phan,\n"
+    "tang nhe so voi 5,0% nam 2012."
 )
 
 # ════════════════════════════════════════════════════════════════════════════
