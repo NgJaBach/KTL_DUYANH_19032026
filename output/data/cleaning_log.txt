@@ -1,0 +1,54 @@
+============================================================
+STEP 1: Loading raw data
+============================================================
+  Raw data loaded: 37,541 rows × 29 cols
+
+STEP 2: Filtering furniture industry (VSIC 31)
+  Furniture observations: 2,346
+  Unique firms:           565
+  Year range:             2012 – 2018
+  Industry codes (5-digit): {31001: 2113, 31009: 223, 31002: 10}
+
+STEP 3: Constructing model variables
+  Variables created: Output, Labor, Capital, Leverage, Wage, Size
+
+STEP 4: Cleaning data
+  After dropping missing core vars: 2,333 (dropped 13)
+  Dropped 33 obs with Capital <= 0, remaining: 2,300
+  Dropped 6 obs with Leverage < 0, remaining: 2,294
+  After cleaning: 2,294 obs (dropped 0 total)
+
+STEP 5: Log-transforming variables
+  Log variables created: lnOutput, lnLabor, lnCapital, lnWage, lnSize
+
+STEP 6: Winsorizing log variables at 1st–99th percentile
+  lnOutput: [5.351, 14.474]
+  lnLabor: [1.386, 8.250]
+  lnCapital: [5.718, 14.445]
+  lnWage: [1.654, 5.281]
+  lnSize: [6.966, 14.516]
+  Leverage: [0.035, 2.355]
+
+STEP 7: Panel structure
+  Total obs:          2,294
+  Unique firms:       590
+  Obs per firm (avg): 3.9
+  Obs per firm (min): 1
+  Obs per firm (max): 7
+
+  Observations by year:
+    2012: 523
+    2013: 500
+    2014: 265
+    2015: 273
+    2016: 262
+    2017: 241
+    2018: 230
+
+  Ownership breakdown:
+    Private: 1,523 (66.4%)
+    FDI: 281 (12.2%)
+
+STEP 8: Saving cleaned data
+  Saved: D:\PROJECTS\GIG\KTL_DUYANH_19032026\output\data\furniture_cleaned.csv
+  Shape: (2294, 29)
