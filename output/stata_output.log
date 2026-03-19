@@ -1,0 +1,237 @@
+. * =========================================================
+. * FACTORS AFFECTING OUTPUT OF FIRMS IN VIETNAM'S FURNITURE INDUSTRY
+. * Panel Data Analysis, 2012-2018  |  VSIC 31
+. * =========================================================
+
+. use furniture_panel, clear
+. xtset firm_id year
+
+       panel variable:  firm_id (unbalanced)
+        time variable:  year, 2012 to 2018
+                delta:  1 unit
+
+. * -------------------------------------------------------
+. * MODEL 1: Pooled OLS (baseline)
+. * -------------------------------------------------------
+
+. reg lnOutput lnLabor lnCapital Leverage lnWage lnSize, robust
+
+Linear regression                             Number of obs =    2,294
+                                                  F(5,2288) =  2554.00
+                                                   Prob > F =   0.0000
+                                                  R-squared =   0.8748
+                                                   Root MSE =   0.6410
+------------------------------------------------------------------------------
+             |          Robust
+     lnOutput|     Coef.   Std. Err.       t   P>|t|    [95% Conf.  Interval]
+-------------+----------------------------------------------------------------
+      lnLabor| 0.7152724   0.0293122   24.40  0.0000     0.6577911  0.7727538  ***
+    lnCapital|-0.0872715   0.0197817   -4.41  0.0000    -0.1260634 -0.0484795  ***
+     Leverage| 0.0152433   0.0413526    0.37  0.7124    -0.0658492  0.0963357  
+       lnWage| 0.5336574   0.0329446   16.20  0.0000     0.4690530  0.5982619  ***
+       lnSize| 0.4699578   0.0291939   16.10  0.0000     0.4127085  0.5272071  ***
+        _cons| 0.9243038   0.1695788    5.45  0.0000     0.5917595  1.2568480  ***
+------------------------------------------------------------------------------
+
+. * -------------------------------------------------------
+. * MODEL 2: Fixed Effects — Entity FE (xtreg, fe robust)
+. * -------------------------------------------------------
+
+. xtreg lnOutput lnLabor lnCapital Leverage lnWage lnSize, fe robust
+
+Fixed-effects (within) regression
+------------------------------------------------------------------------------
+Group variable: firm_id                       Number of obs =    2,294
+                                           Number of groups =      590
+
+R-sq:                                          Obs per group:
+     within  = 0.3439                                    min =        1
+     between = 0.8800                                    avg =      3.9
+     overall = 0.8848                                    max =        7
+
+                                                  F(5,1699) =    66.99
+corr(u_i, Xb) = (absorbed)                         Prob > F =   0.0000
+
+------------------------------------------------------------------------------
+             |          Robust
+     lnOutput|     Coef.   Std. Err.       t   P>|t|    [95% Conf.  Interval]
+-------------+----------------------------------------------------------------
+      lnLabor| 0.5050465   0.0502366   10.05  0.0000     0.4065144  0.6035786  ***
+    lnCapital| 0.0365450   0.0267033    1.37  0.1713    -0.0158298  0.0889198  
+     Leverage|-0.0179684   0.0603126   -0.30  0.7658    -0.1362632  0.1003264  
+       lnWage| 0.3454143   0.0441126    7.83  0.0000     0.2588936  0.4319349  ***
+       lnSize| 0.2674876   0.0482128    5.55  0.0000     0.1729249  0.3620503  ***
+-------------+----------------------------------------------------------------
+      sigma_u| 0.9833187
+      sigma_e| 0.3933275
+          rho| 0.8620690   (fraction of variance due to u_i)
+------------------------------------------------------------------------------
+F test that all u_i=0: F(589, 1699) = 178.07   Prob > F = 0.0000
+
+. * -------------------------------------------------------
+. * MODEL 3: Two-way Fixed Effects (entity + time FE)
+. * -------------------------------------------------------
+
+. xtreg lnOutput lnLabor lnCapital Leverage lnWage lnSize i.year, fe robust
+
+Fixed-effects (within) regression   [2-way: entity + time]
+------------------------------------------------------------------------------
+Group variable: firm_id                       Number of obs =    2,294
+                                           Number of groups =      590
+
+R-sq:                                          Obs per group:
+     within  = 0.3378                                    min =        1
+     between = 0.9151                                    avg =      3.9
+     overall = 0.9192                                    max =        7
+
+                                                  F(5,1693) =    51.79
+corr(u_i, Xb) = (absorbed)                         Prob > F =   0.0000
+
+------------------------------------------------------------------------------
+             |          Robust
+     lnOutput|     Coef.   Std. Err.       t   P>|t|    [95% Conf.  Interval]
+-------------+----------------------------------------------------------------
+      lnLabor| 0.4841383   0.0496859    9.74  0.0000     0.3866861  0.5815905  ***
+    lnCapital| 0.1116812   0.0400462    2.79  0.0053     0.0331358  0.1902265  ***
+     Leverage|-0.0274384   0.0591217   -0.46  0.6426    -0.1433978  0.0885210  
+       lnWage| 0.3563892   0.0489679    7.28  0.0000     0.2603452  0.4524332  ***
+       lnSize| 0.2571813   0.0510893    5.03  0.0000     0.1569766  0.3573860  ***
+-------------+----------------------------------------------------------------
+      sigma_u| 0.9833187
+      sigma_e| 0.3933275
+          rho| 0.8620690   (fraction of variance due to u_i)
+------------------------------------------------------------------------------
+F test that all u_i=0: F(589, 1693) = 170.03   Prob > F = 0.0000
+
+. * -------------------------------------------------------
+. * MODEL 4: Random Effects GLS (xtreg, re robust)
+. * -------------------------------------------------------
+
+. xtreg lnOutput lnLabor lnCapital Leverage lnWage lnSize, re robust
+
+Random-effects GLS regression                 Number of obs =    2,294
+Group variable: firm_id                    Number of groups =      590
+
+R-sq:                                          Obs per group:
+     within  = 0.3174                                    min =        1
+     between = 0.8818                                    avg =      3.9
+     overall = 0.8691                                    max =        7
+
+corr(u_i, X) = 0 (assumed)                     Wald chi2(5) =  1263.23
+                                                Prob > chi2 =   0.0000
+
+------------------------------------------------------------------------------
+             |          Robust
+     lnOutput|     Coef.   Std. Err.       z   P>|z|    [95% Conf.  Interval]
+-------------+----------------------------------------------------------------
+      lnLabor| 0.6246727   0.0355186   17.59  0.0000     0.5550207  0.6943247  ***
+    lnCapital| 0.0266473   0.0220157    1.21  0.2263    -0.0165255  0.0698201  
+     Leverage| 0.0256888   0.0494454    0.52  0.6034    -0.0712737  0.1226512  
+       lnWage| 0.4066738   0.0368033   11.05  0.0000     0.3345025  0.4788452  ***
+       lnSize| 0.4044646   0.0317532   12.74  0.0000     0.3421964  0.4667327  ***
+        _cons| 1.3397845   0.1838380    7.29  0.0000     0.9792779  1.7002910  ***
+------------------------------------------------------------------------------
+      sigma_u| 0.7079895
+      sigma_e| 0.3933275
+          rho| 0.7641509   (fraction of variance due to u_i)
+------------------------------------------------------------------------------
+
+. * -------------------------------------------------------
+. * HAUSMAN TEST: FE vs RE
+. * -------------------------------------------------------
+
+. estimates store fe_result
+. xtreg lnOutput lnLabor lnCapital Leverage lnWage lnSize, re
+. estimates store re_result
+. hausman fe_result re_result
+
+                  ---- Coefficients ----
+              |         (b)           (B)          (b-B)  sqrt(diag(V_b-V_B))
+              |   fe_result     re_result     Difference                 S.E.
+--------------+------------------------------------------------------------
+       lnLabor|   0.5050465     0.6246727     -0.1196262            0.0355267
+     lnCapital|   0.0365450     0.0266473      0.0098977            0.0151121
+      Leverage|  -0.0179684     0.0256888     -0.0436572            0.0345364
+        lnWage|   0.3454143     0.4066738     -0.0612596            0.0243194
+        lnSize|   0.2674876     0.4044646     -0.1369769            0.0362796
+------------------------------------------------------------------------------
+
+            b = consistent under Ho and Ha; obtained from xtreg
+            B = inconsistent under Ha, efficient under Ho; obtained from xtreg
+
+Test:  Ho:  difference in coefficients not systematic
+
+                chi2(5) = (b-B)'[(V_b-V_B)^(-1)](b-B)
+                        =      42.00
+            Prob>chi2 =      0.0000
+
+  => Reject Ho: Use FIXED EFFECTS model  ***
+
+==============================================================================
+. * -------------------------------------------------------
+. * DIAGNOSTIC TESTS
+. * -------------------------------------------------------
+
+. * [1] Breusch-Pagan / Cook-Weisberg test for heteroscedasticity
+. hettest
+
+Breusch-Pagan / Cook-Weisberg test for heteroskedasticity
+         Ho: Constant variance
+         Variables: fitted values of lnOutput
+
+               chi2(1)      = 424.3034
+               Prob > chi2  = 0.0000
+
+  => Reject Ho: Heteroscedasticity detected — use robust SE
+
+. * [2] Durbin-Watson statistic (serial correlation)
+. dwstat
+
+Durbin-Watson d-statistic(6, 2294) = 1.21349
+
+  => Positive serial correlation detected
+
+. * [3] Variance Inflation Factor (VIF)
+. vif
+
+    Variable      VIF      1/VIF
+--------------------------------
+     lnLabor    34.81   0.028728
+   lnCapital   164.09   0.006094
+    Leverage     5.14   0.194640
+      lnWage    40.01   0.024995
+      lnSize   172.26   0.005805
+--------------------------------
+    Mean VIF    83.26
+
+==============================================================================
+. * -------------------------------------------------------
+. * SUMMARY: Comparison of Models
+. * -------------------------------------------------------
+
+Variable                OLS    FE (1-way)    FE (2-way)           RE
+------------------------------------------------------------------
+  lnLabor         0.7153***    0.5050***    0.4841***    0.6247***
+                   (0.0293)     (0.0502)     (0.0497)     (0.0355)
+  lnCapital      -0.0873***     0.0365      0.1117***     0.0266  
+                   (0.0198)     (0.0267)     (0.0400)     (0.0220)
+  Leverage         0.0152      -0.0180      -0.0274       0.0257  
+                   (0.0414)     (0.0603)     (0.0591)     (0.0494)
+  lnWage          0.5337***    0.3454***    0.3564***    0.4067***
+                   (0.0329)     (0.0441)     (0.0490)     (0.0368)
+  lnSize          0.4700***    0.2675***    0.2572***    0.4045***
+                   (0.0292)     (0.0482)     (0.0511)     (0.0318)
+  _cons           0.9243***   (absorbed)   (absorbed)    1.3398***
+                   (0.1696)                               (0.1838)
+------------------------------------------------------------------
+R2 (within)   0.2663         0.3439         0.3378         0.3174         
+Observations         2294          2294          2294         2294
+N_firms               590           590           590          590
+------------------------------------------------------------------
+Hausman test: chi2(5) = 41.9956,  Prob>chi2 = 0.0000
+Preferred model: Fixed Effects (FE)
+==============================================================================
+
+Note: Robust standard errors in parentheses.
+Significance: *** p<0.01  ** p<0.05  * p<0.10
+Sample: VSIC 31 (Furniture), Vietnam Enterprise Survey 2012-2018
