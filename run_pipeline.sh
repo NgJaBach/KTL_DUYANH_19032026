@@ -38,7 +38,7 @@ echo "      Done."
 echo ""
 
 echo "[5/5] Generating Vietnamese PDF Report..."
-python scripts/05_generate_report_pdf.py
+python -X utf8 scripts/05_generate_report_pdf.py
 echo "      Done."
 echo ""
 

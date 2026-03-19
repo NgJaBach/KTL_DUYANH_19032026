@@ -264,7 +264,7 @@ pdf.ln(12)
 pdf.set_font("Arial", "", 10)
 info_items = [
     ("Nguồn dữ liệu",   "Điều tra Doanh nghiệp GSO, Việt Nam"),
-    ("Giai đoạn",        "2012 – 2018"),
+    ("Giai doan (7 nam)",        "2012 - 2018"),
     ("Ngành",            "VSIC 31 — Sản xuất giường, tủ, bàn, ghế"),
     ("Số quan sát",      f"{len(df):,} quan sát — {df['firm_id'].nunique():,} doanh nghiệp"),
     ("Phương pháp",      "Pooled OLS · Fixed Effects · Random Effects · Hausman Test"),
@@ -746,7 +746,7 @@ pdf.table(
 pdf.highlight_box(
     "Kết luận: Kết quả về chiều và mức ý nghĩa thống kê của ln(Lao động), "
     "ln(Vốn), ln(Lương) và ln(Quy mô) nhất quán qua cả hai biến phụ thuộc. "
-    "Điểm khác biệt đáng chú ý: Đòn bẩy có tác động âm và có ý nghĩa (β = -0,205***) "
+    "Điểm khác biệt đáng chú ý: Đòn bẩy có tác động âm và có ý nghĩa (he so = -0,205***) "
     "khi dùng VA — gợi ý rằng nợ cao làm giảm giá trị gia tăng, dù không ảnh hưởng "
     "đến doanh thu thuần. Kết quả mô hình chính là bền vững.",
     bg=(240, 253, 244), border=(22, 101, 52)
@@ -815,7 +815,7 @@ pdf.body(
     "(3) ĐÒN BẨY không có ý nghĩa thống kê:\n"
     "    Cấu trúc tài chính (tỷ lệ nợ) không tác động đáng kể đến sản lượng "
     "    trong ngắn hạn. Tuy nhiên, khi dùng VA làm biến phụ thuộc, đòn bẩy "
-    "    có tác động âm (β = -0,205***), gợi ý rằng nợ cao làm giảm hiệu quả "
+    "    có tác động âm (he so = -0,205***), gợi ý rằng nợ cao làm giảm hiệu quả "
     "    sản xuất dù không làm giảm doanh thu.\n\n"
     "(4) HIỆU SUẤT THEO QUY MÔ (Returns to Scale):\n"
     "    Tổng hệ số lao động và vốn (0,484 + 0,112 = 0,596) < 1,\n"
@@ -833,10 +833,10 @@ pdf.h1("IX. KẾT LUẬN VÀ HÀM Ý CHÍNH SÁCH")
 pdf.h2("9.1. Tóm tắt phát hiện chính")
 findings = [
     "Lao động là nhân tố quan trọng nhất: elasticity = 0,484 — ngành gỗ nội thất là ngành thâm dụng lao động.",
-    "Chất lượng lao động (đại diện bởi lương bình quân) có tác động đáng kể: β = 0,356 — kỹ năng quan trọng hơn số lượng.",
-    "Vốn cố định có tác động khiêm tốn (β = 0,112), nhỏ hơn nhiều so với lao động.",
+    "Chất lượng lao động (đại diện bởi lương bình quân) có tác động đáng kể: he so = 0,356 — kỹ năng quan trọng hơn số lượng.",
+    "Vốn cố định có tác động khiêm tốn (he so = 0,112), nhỏ hơn nhiều so với lao động.",
     "Đòn bẩy tài chính không ảnh hưởng đáng kể đến doanh thu, nhưng làm giảm giá trị gia tăng.",
-    "Quy mô doanh nghiệp có lợi thế (β = 0,257), nhưng hiệu suất theo quy mô là giảm dần (0,596 < 1).",
+    "Quy mô doanh nghiệp có lợi thế (he so = 0,257), nhưng hiệu suất theo quy mô là giảm dần (0,596 < 1).",
     "Kiểm định Hausman xác nhận Fixed Effects là mô hình phù hợp — đặc điểm doanh nghiệp không quan sát được là quan trọng.",
 ]
 for i, f in enumerate(findings, 1):
