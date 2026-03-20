@@ -5,7 +5,8 @@ Topic: Factors affecting output of firms in Vietnam's furniture industry
 
 Model:
     ln(Output_it) = β0 + β1*ln(Labor_it) + β2*ln(Capital_it)
-                  + β3*Leverage_it + β4*ln(Wage_it) + β5*ln(Size_it) + ε_it
+                  + β3*Leverage_it + β4*ln(Wage_it) + β5*ln(Size_it)
+                  + β6*HHI_t + ε_it
 
 Estimators:
     1. Pooled OLS
@@ -13,6 +14,9 @@ Estimators:
     3. Random Effects (RE) — GLS estimator
     4. Hausman test (FE vs RE)
     5. Diagnostics: heteroscedasticity, serial correlation, multicollinearity
+
+Note: HHI is year-level (varies by t only). In 2-way FE it is absorbed by
+time dummies and dropped automatically.
 
 Output: regression tables saved to output/tables/
 """
@@ -39,9 +43,17 @@ os.makedirs(TBL_DIR, exist_ok=True)
 df = pd.read_csv(DATA_IN)
 print(f"Loaded: {df.shape[0]:,} obs × {df.shape[1]} cols")
 
+# Merge HHI (year-level) into panel
+conc_path = os.path.join(BASE_DIR, "output", "tables", "table_market_concentration.csv")
+hhi_df = pd.read_csv(conc_path)[['year', 'HHI']]
+df = df.merge(hhi_df, on='year', how='left')
+print(f"HHI merged: {df['HHI'].notna().sum()} non-missing")
+
 # Model variables
-DEPVAR = 'lnOutput'
-INDVARS = ['lnLabor', 'lnCapital', 'Leverage', 'lnWage', 'lnSize']
+DEPVAR  = 'lnOutput'
+INDVARS = ['lnLabor', 'lnCapital', 'Leverage', 'lnWage', 'lnSize', 'HHI']
+# INDVARS without HHI — for 2-way FE where HHI is absorbed by time dummies
+INDVARS_NO_HHI = ['lnLabor', 'lnCapital', 'Leverage', 'lnWage', 'lnSize']
 ALL_VARS = [DEPVAR] + INDVARS
 
 # Drop any remaining missing values in model variables
@@ -72,11 +84,12 @@ print("\n" + "="*60)
 print("MODEL 2: Fixed Effects (Entity FE + Time FE)")
 print("="*60)
 
-fe_mod = PanelOLS(Y, X_vars, entity_effects=True, time_effects=True)
+# 2-way FE: HHI absorbed by time dummies → exclude it
+fe_mod = PanelOLS(Y, panel[INDVARS_NO_HHI], entity_effects=True, time_effects=True)
 fe_res = fe_mod.fit(cov_type='robust')   # cluster-robust SE
 print(fe_res.summary)
 
-# ── Also run one-way FE (entity only) for comparison ──────────────────────
+# ── Also run one-way FE (entity only) — includes HHI ──────────────────────
 fe1_mod = PanelOLS(Y, X_vars, entity_effects=True, time_effects=False)
 fe1_res = fe1_mod.fit(cov_type='robust')
 
@@ -104,7 +117,7 @@ print("="*60)
 
 from linearmodels.panel import compare as panel_compare
 
-# Manual Hausman statistic
+# Manual Hausman statistic (compare 1-way FE vs RE on shared variables)
 fe1_params = fe1_res.params[INDVARS]
 re_params  = re_res.params[INDVARS]
 diff_params = fe1_params - re_params
@@ -147,7 +160,7 @@ if 'lnVA' in df.columns:
     df_rob = df_rob[np.isfinite(df_rob['lnVA'])]
     panel_rob = df_rob.set_index(['firm_id', 'year']).sort_index()
     Y_rob = panel_rob['lnVA']
-    X_rob = panel_rob[INDVARS]
+    X_rob = panel_rob[INDVARS_NO_HHI]   # 2-way FE: HHI absorbed by time dummies
     try:
         fe_rob_mod = PanelOLS(Y_rob, X_rob, entity_effects=True, time_effects=True)
         fe_rob_res = fe_rob_mod.fit(cov_type='robust')
@@ -185,6 +198,7 @@ vif_data.to_csv(os.path.join(TBL_DIR, "diag_vif.csv"), index=False)
 # 2. Breusch-Pagan (heteroscedasticity) on pooled OLS residuals
 print("\n[2] Breusch-Pagan Test for Heteroscedasticity (Pooled OLS)")
 ols_sm = sm.OLS(df_model[DEPVAR], sm.add_constant(df_model[INDVARS])).fit()
+# (ols_sm uses all INDVARS including HHI)
 bp_stat, bp_pval, _, _ = het_breuschpagan(ols_sm.resid, ols_sm.model.exog)
 print(f"  LM statistic: {bp_stat:.4f}")
 print(f"  p-value:      {bp_pval:.4f}")
@@ -217,18 +231,21 @@ VAR_LABELS = {
     'Leverage':  'Leverage',
     'lnWage':    'ln(Wage)',
     'lnSize':    'ln(Size)',
+    'HHI':       'HHI',
     'const':     'Constant',
 }
 
-def extract_results(res, model_name, has_const=True):
+def extract_results(res, model_name, has_const=True, indvars=None):
     """Extract coefficients, se, t-stat, p-val from linearmodels result."""
+    if indvars is None:
+        indvars = INDVARS
     rows = []
     params = res.params
     pvals  = res.pvalues
     se     = res.std_errors
     tstats = res.tstats
 
-    for var in (INDVARS + (['const'] if has_const else [])):
+    for var in (indvars + (['const'] if has_const else [])):
         if var in params.index:
             coef = params[var]
             pv   = pvals[var]
@@ -240,10 +257,10 @@ def extract_results(res, model_name, has_const=True):
             })
     return pd.DataFrame(rows)
 
-ols_tbl  = extract_results(ols_res,  'OLS',  has_const=True)
-fe2_tbl  = extract_results(fe_res,   'FE2W', has_const=False)
-fe1_tbl  = extract_results(fe1_res,  'FE1W', has_const=False)
-re_tbl   = extract_results(re_res,   'RE',   has_const=True)
+ols_tbl  = extract_results(ols_res,  'OLS',  has_const=True,  indvars=INDVARS)
+fe2_tbl  = extract_results(fe_res,   'FE2W', has_const=False, indvars=INDVARS_NO_HHI)
+fe1_tbl  = extract_results(fe1_res,  'FE1W', has_const=False, indvars=INDVARS)
+re_tbl   = extract_results(re_res,   'RE',   has_const=True,  indvars=INDVARS)
 
 # Merge all
 from functools import reduce

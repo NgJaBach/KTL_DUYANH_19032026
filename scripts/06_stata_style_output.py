@@ -20,17 +20,26 @@ LOG_OUT  = os.path.join(BASE_DIR, "output", "stata_output.log")
 # ── Load & set up panel ───────────────────────────────────────────────────────
 df = pd.read_csv(DATA_IN)
 DEPVAR  = 'lnOutput'
-INDVARS = ['lnLabor', 'lnCapital', 'Leverage', 'lnWage', 'lnSize']
+INDVARS = ['lnLabor', 'lnCapital', 'Leverage', 'lnWage', 'lnSize', 'HHI']
+INDVARS_NO_HHI = ['lnLabor', 'lnCapital', 'Leverage', 'lnWage', 'lnSize']
+
+# Merge HHI (year-level) into panel
+BASE_DIR_CONC = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+conc_path = os.path.join(BASE_DIR_CONC, "output", "tables", "table_market_concentration.csv")
+hhi_df = pd.read_csv(conc_path)[['year', 'HHI']]
+df = df.merge(hhi_df, on='year', how='left')
 
 df_model = df[['firm_id','year'] + [DEPVAR] + INDVARS].dropna()
 panel    = df_model.set_index(['firm_id','year']).sort_index()
 Y        = panel[DEPVAR]
 X        = panel[INDVARS]
+X_no_hhi = panel[INDVARS_NO_HHI]
 X_c      = sm.add_constant(X)
 
 ols_res = LMPooledOLS(Y, X_c).fit(cov_type='robust')
 fe_res  = PanelOLS(Y, X, entity_effects=True, time_effects=False).fit(cov_type='robust')
-fe2_res = PanelOLS(Y, X, entity_effects=True, time_effects=True).fit(cov_type='robust')
+# 2-way FE: HHI absorbed by time dummies — use INDVARS_NO_HHI
+fe2_res = PanelOLS(Y, X_no_hhi, entity_effects=True, time_effects=True).fit(cov_type='robust')
 re_res  = RandomEffects(Y, X_c).fit(cov_type='robust')
 
 N   = fe_res.nobs
@@ -174,10 +183,10 @@ w(". * -------------------------------------------------------")
 w(". * MODEL 1: Pooled OLS (baseline)")
 w(". * -------------------------------------------------------")
 w()
-w(". reg lnOutput lnLabor lnCapital Leverage lnWage lnSize, robust")
+w(". reg lnOutput lnLabor lnCapital Leverage lnWage lnSize HHI, robust")
 w()
 w(f"{'Linear regression':<40} {'Number of obs':>18} = {N:>8,}")
-w(f"{'':40} {'F(5,' + str(int(ols_res.df_resid)) + ')':>18} = {ols_res.f_statistic_robust.stat:>8.2f}")
+w(f"{'':40} {'F(' + str(len(INDVARS)) + ',' + str(int(ols_res.df_resid)) + ')':>18} = {ols_res.f_statistic_robust.stat:>8.2f}")
 w(f"{'':40} {'Prob > F':>18} = {ols_res.f_statistic_robust.pval:>8.4f}")
 w(f"{'':40} {'R-squared':>18} = {r2_ols:>8.4f}")
 w(f"{'':40} {'Root MSE':>18} = {np.sqrt(ols_sm.mse_resid):>8.4f}")
@@ -210,7 +219,7 @@ w(". * MODEL 2: Fixed Effects — Entity FE (xtreg, fe robust)")
 w(". * -------------------------------------------------------")
 xtreg_block(
     "Fixed-effects (within) regression",
-    "xtreg lnOutput lnLabor lnCapital Leverage lnWage lnSize, fe robust",
+    "xtreg lnOutput lnLabor lnCapital Leverage lnWage lnSize HHI, fe robust",
     fe_res, INDVARS, include_cons=False,
     r2_w=r2_within_fe, r2_b=r2_between_fe, r2_o=r2_overall_fe,
 )
@@ -224,8 +233,9 @@ w(". * -------------------------------------------------------")
 xtreg_block(
     "Fixed-effects (within) regression   [2-way: entity + time]",
     "xtreg lnOutput lnLabor lnCapital Leverage lnWage lnSize i.year, fe robust",
-    fe2_res, INDVARS, include_cons=False,
+    fe2_res, INDVARS_NO_HHI, include_cons=False,
     r2_w=fe2_res.rsquared_within, r2_b=fe2_res.rsquared_between, r2_o=fe2_res.rsquared_overall,
+    note="Note: HHI omitted — absorbed by year fixed effects (i.year)",
 )
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -235,7 +245,7 @@ w(". * -------------------------------------------------------")
 w(". * MODEL 4: Random Effects GLS (xtreg, re robust)")
 w(". * -------------------------------------------------------")
 w()
-w(". xtreg lnOutput lnLabor lnCapital Leverage lnWage lnSize, re robust")
+w(". xtreg lnOutput lnLabor lnCapital Leverage lnWage lnSize HHI, re robust")
 w()
 w(f"{'Random-effects GLS regression':<40} {'Number of obs':>18} = {N:>8,}")
 n_grps = df_model['firm_id'].nunique()
@@ -285,7 +295,7 @@ w(". * HAUSMAN TEST: FE vs RE")
 w(". * -------------------------------------------------------")
 w()
 w(". estimates store fe_result")
-w(". xtreg lnOutput lnLabor lnCapital Leverage lnWage lnSize, re")
+w(". xtreg lnOutput lnLabor lnCapital Leverage lnWage lnSize HHI, re")
 w(". estimates store re_result")
 w(". hausman fe_result re_result")
 w()

@@ -1,2 +1,2 @@
 Test,Statistic,DF,p-value,Preferred Model
-Hausman (FE vs RE),41.9956,5,0.0,Fixed Effects
+Hausman (FE vs RE),83.8698,6,0.0,Fixed Effects
